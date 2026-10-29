@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llmsteer-discord"
+version = "0.1.0"
+description = "A Discord bot with 4-bit Llama neuron steering"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "discord.py>=2.3",
+  "huggingface-hub>=0.24",
+  "numpy>=1.26",
+  "python-dotenv>=1.0",
+  "safetensors>=0.4",
+  "torch>=2.2",
+  "transformers>=4.45",
+  "accelerate>=1.0",
+]
+
+[project.optional-dependencies]
+cuda = ["bitsandbytes>=0.43"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+llmsteer = "llmsteer.bot:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

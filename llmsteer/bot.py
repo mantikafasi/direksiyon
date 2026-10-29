@@ -19,6 +19,7 @@ from .steering import (
     format_plan,
     parse_bare_coordinate,
     parse_spec,
+    random_steer,
     split_leading_specs,
 )
 
@@ -46,6 +47,9 @@ class SteeringBot(commands.Bot):
         async def steer_command(ctx, *, spec: str):
             await self.prefix_steer(ctx, spec=spec)
 
+        async def steer_random_command(ctx):
+            await self.prefix_steer_random(ctx)
+
         async def steer_clear_command(ctx):
             await self.prefix_steer_clear(ctx)
 
@@ -63,6 +67,14 @@ class SteeringBot(commands.Bot):
 
         self.add_command(commands.Command(ask_command, name="ask", help="Ask the model; optionally start with steering"))
         self.add_command(commands.Command(steer_command, name="steer", help="Set neuron steering"))
+        self.add_command(
+            commands.Command(
+                steer_random_command,
+                name="steer_random",
+                aliases=["random"],
+                help="Steer a random neuron at strength ±0.7–1.0",
+            )
+        )
         self.add_command(commands.Command(steer_clear_command, name="steer_clear", help="Clear steering"))
         self.add_command(commands.Command(steer_show_command, name="steer_show", help="Show steering"))
         self.add_command(commands.Command(probe_command, name="probe", help="Run a greedy identity probe"))
@@ -153,6 +165,17 @@ class SteeringBot(commands.Bot):
             await ctx.send(f"Steering set: `{format_plan(steers)}`.{warning}")
         except (SpecError, ValueError) as exc:
             await ctx.send(f"Error: {exc}")
+
+    async def prefix_steer_random(self, ctx: commands.Context) -> None:
+        engine = self._require_engine()
+        steer = random_steer(engine.model.n_layers, engine.model.n_neurons)
+        steers = engine.model.validate([steer], self.config.alpha_max)
+        engine.set_steering(
+            ctx.channel.id,
+            steers,
+            clear_history=self.config.clear_history_on_steer,
+        )
+        await ctx.send(f"Random steering set: `{format_plan(steers)}`.")
 
     async def _open_panel(self, ctx: commands.Context, layer: int, neuron: int) -> None:
         engine = self._require_engine()

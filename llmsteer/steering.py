@@ -13,6 +13,7 @@ norm ``alpha * r_L``, where ``r_L`` is the median residual norm after layer L.
 
 from __future__ import annotations
 
+import random
 import re
 from dataclasses import dataclass
 
@@ -112,6 +113,11 @@ def parse_spec(text: str, *, default_strength: float | None = None) -> list[Neur
             continue
         steer = _parse_one(piece)
         if steer is None:
+            # several specs separated only by whitespace: "L4N1338 -0.2 L24N396 -0.6"
+            run, leftover = split_leading_specs(piece)
+            if run and not leftover:
+                out.extend(run)
+                continue
             # bare coordinate plus a separately supplied strength
             if default_strength is not None:
                 ident = _ID_ONLY.match(piece)
@@ -221,6 +227,21 @@ def _is_boundary(text: str, index: int) -> bool:
     if index >= len(text):
         return True
     return text[index] in " \t\r\n,;"
+
+
+def random_steer(
+    n_layers: int,
+    n_neurons: int,
+    *,
+    low: float = 0.7,
+    high: float = 1.0,
+    rng: random.Random | None = None,
+) -> NeuronSteer:
+    """Pick a random neuron with a strength in ``[-high, -low]`` or ``[low, high]``."""
+    rng = rng or random
+    magnitude = round(rng.uniform(low, high), 2)
+    sign = rng.choice((-1.0, 1.0))
+    return NeuronSteer(rng.randrange(n_layers), rng.randrange(n_neurons), sign * magnitude)
 
 
 def format_plan(steers: list[NeuronSteer]) -> str:

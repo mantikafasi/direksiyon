@@ -67,3 +67,22 @@ def test_nudge_adds_removes_and_avoids_float_dust():
     assert nudge(steers, 1, 2, -0.3) == []
     other = NeuronSteer(3, 4, 0.5)
     assert nudge([other], 1, 2, -0.8) == [other, NeuronSteer(1, 2, -0.8)]
+
+
+def test_parse_space_separated_specs():
+    assert parse_spec("l4n1338 -0.2 L24N396 -0.6") == [
+        NeuronSteer(4, 1338, -0.2),
+        NeuronSteer(24, 396, -0.6),
+    ]
+
+
+def test_random_steer_strength_range():
+    import random
+
+    from llmsteer.steering import random_steer
+
+    rng = random.Random(0)
+    for _ in range(200):
+        steer = random_steer(32, 14336, rng=rng)
+        assert 0 <= steer.layer < 32 and 0 <= steer.neuron < 14336
+        assert 0.7 <= abs(steer.alpha) <= 1.0
